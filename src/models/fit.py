@@ -1,7 +1,7 @@
 import torch
 import random
 
-from src.utils import pad_len_sort, pad_len_sort_both
+from src.utils import pad_len_sort_both
 
 def Multi30k(enc,dec,train,valid,epochs,opt_enc,opt_dec,loss_fn, trg_vocab_size, trg_sos_id,
              teacher_forcing=0.5, end_train=300, end_val=100, print_every=100):
