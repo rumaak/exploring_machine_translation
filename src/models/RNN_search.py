@@ -33,9 +33,9 @@ class AttnDecoder(nn.Module):
         """
         Feed forward
         Input:
-            inp - (seq_len,bs,n_hidd_enc*2)
+            inp - (seq_len,bs,n_hidd_enc*n_dir_enc)
             state - (n_layers,bs,n_hidden_dec)
-            prev_word - (1,bs,n_factors)
+            prev_word - (1,bs)
         Output:
             out - (1,bs,n_words)
             hidd - (n_layers,bs,n_hidden)
@@ -48,7 +48,7 @@ class AttnDecoder(nn.Module):
         c = self.context(state[0], inp)[None, :]
         out, hidd = self.gru(torch.cat((prev_word, c), -1), state)
         out = self.out(out)
-        out = F.softmax(out, -1)
+        out = F.log_softmax(out, -1)
         return out, hidd
 
     def context(self, state, inp):
@@ -56,9 +56,9 @@ class AttnDecoder(nn.Module):
         Compute context
         Input:
             state - (bs,n_hidden_dec)
-            inp - (seq_len,bs,n_hidd_enc*2)
+            inp - (seq_len,bs,n_hidd_enc*n_dir_enc)
         Output:
-            c - (1,bs,n_hidd_enc*2)
+            c - (1,bs,n_hidd_enc*n_dir_enc)
         """
         state_expd = state.expand(len(inp), *state.size())
 
