@@ -2,11 +2,13 @@ import torch
 import random
 
 from tqdm import tqdm_notebook as tqdm
-import matplotlib.pyplot as pl
+import matplotlib.pyplot as plt
 
 from src.utils import pad_len_sort_both
 
 # TODO: create class for fitting any set of models
+# TODO: add getattr() to rnnsearch
+# TODO: hyperparameter grid search
 
 
 def lstm_rnn(enc,dec,train,valid,epochs,opt_enc,opt_dec,loss_fn, trg_vocab_size, trg_sos_id,
@@ -303,4 +305,6 @@ def rnnsearch(enc, dec, train, valid, epochs, opt_enc, opt_dec, loss_fn, trg_voc
             example += 1
 
         print(f'Train: {getLoss()} \nValid: {getLoss(True)}')
-        pl.plot(to_plot)
+        plt.plot(to_plot)
+        axes = plt.gca()
+        axes.set_ylim([0, 10])
