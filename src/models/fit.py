@@ -1,14 +1,11 @@
 import torch
 import random
+import math
 
 from tqdm import tqdm_notebook as tqdm
 import matplotlib.pyplot as plt
 
 from src.utils import pad_len_sort_both
-
-# TODO: create class for fitting any set of models
-# TODO: add getattr() to rnnsearch
-# TODO: hyperparameter grid search
 
 
 def lstm_rnn(enc,dec,train,valid,epochs,opt_enc,opt_dec,loss_fn, trg_vocab_size, trg_sos_id,
@@ -79,7 +76,7 @@ def lstm_rnn(enc,dec,train,valid,epochs,opt_enc,opt_dec,loss_fn, trg_vocab_size,
             opt_enc.step()
             opt_dec.step()
 
-            if example % int(end_train/100) == 0:
+            if example % math.ceil(end_train/10) == 0:
                 print(f'{round(example/(end_train/100),1)}% done')
 
             if example % print_every == 0:
@@ -218,6 +215,10 @@ def lstm_rnn_vls(enc,dec,train,valid,epochs,opt_enc,opt_dec,loss_fn, trg_vocab_s
 def rnnsearch(enc, dec, train, valid, epochs, opt_enc, opt_dec, loss_fn, trg_vocab_size,
               teacher_forcing=0.5, end_train=300, end_val=100, plot_every=100, save_every=100,
               batch_size=8):
+
+    enc.train()
+    dec.train()
+
     def getLoss(val=False):
         data = train if not val else valid
         enc.eval()
@@ -260,7 +261,7 @@ def rnnsearch(enc, dec, train, valid, epochs, opt_enc, opt_dec, loss_fn, trg_voc
         opt_enc.zero_grad()
         opt_dec.zero_grad()
 
-        for p_id in tqdm(range(end_train)):
+        for _ in tqdm(range(end_train)):
             pair = next(train_iter)
             src, trg = pair.de, pair.en
             old_out, _ = enc(src)

@@ -7,7 +7,7 @@ class AttnEncoder(nn.Module):
     def __init__(self, n_words, n_factors, n_hidden, n_layers, bidirectional=False):
         super().__init__()
         self.e = nn.Embedding(n_words, n_factors)
-        self.gru = GRU(n_factors, n_hidden, n_layers, bidirectional)
+        self.gru = GRU(n_factors, n_hidden, n_layers, bidirectional=bidirectional)
 
     def forward(self, *args):
         out = self.e(args[0])
@@ -19,15 +19,25 @@ class AttnEncoder(nn.Module):
 
 
 class AttnDecoder(nn.Module):
-    def __init__(self, n_words, n_factors, n_hidden_dec, n_hidden_enc, n_allign, n_layers):
+    def __init__(self, n_words, n_factors, n_hidden_dec, n_hidden_enc, n_dir_enc, n_allign, n_layers,
+                 n_l):
+
         super().__init__()
+
+        if n_l % 2 != 0:
+            raise ValueError
+        self.t_ids = self.get_indices(n_l * 2)
+
         self.n_layers = n_layers
         self.n_hidden = n_hidden_dec
+        self.n_words = n_words
+
         self.emb = nn.Embedding(n_words, n_factors)
-        self.align = nn.ModuleList([nn.Linear((2 * n_hidden_enc + n_hidden_dec), n_allign),
+        self.align = nn.ModuleList([nn.Linear((n_dir_enc * n_hidden_enc + n_hidden_dec), n_allign),
                                     nn.Linear(n_allign, 1)])
-        self.gru = GRU((n_factors + 2 * n_hidden_enc), n_hidden_dec, n_layers)
-        self.out = nn.Linear(n_hidden_dec, n_words)
+        self.gru = GRU((n_factors + n_dir_enc * n_hidden_enc), n_hidden_dec, n_layers)
+        self.t_hat = nn.Linear(n_hidden_dec + n_factors + (n_hidden_enc*n_dir_enc), 2 * n_l)
+        self.out = nn.Linear(n_l, n_words)
 
     def forward(self, inp, state, prev_word):
         """
@@ -42,13 +52,20 @@ class AttnDecoder(nn.Module):
         """
         prev_word = self.emb(prev_word)
         bs = inp.size(1)
+
         if state is None:
             state = torch.zeros(self.n_layers, bs, self.n_hidden).cuda()
 
         c = self.context(state[0], inp)[None, :]
+
         out, hidd = self.gru(torch.cat((prev_word, c), -1), state)
-        out = self.out(out)
+
+        t_hat = self.t_hat(torch.cat((out,prev_word,c),-1))
+        t = self.compute_t(t_hat)
+
+        out = self.out(t)
         out = F.log_softmax(out, -1)
+
         return out, hidd
 
     def context(self, state, inp):
@@ -69,6 +86,21 @@ class AttnDecoder(nn.Module):
 
         return c
 
+    def compute_t(self, t_hat):
+        t1 = t_hat[...,self.t_ids[0]]
+        t2 = t_hat[...,self.t_ids[1]]
+        t = torch.max(t1,t2)
+        return t
+
+    @staticmethod
+    def get_indices(n_l):
+        odd, even = [], []
+        for n in range(n_l):
+            if n % 2 == 0:
+                even.append(n)
+            else:
+                odd.append(n)
+        return even, odd
 
 class GRU(nn.Module):
     """
@@ -91,7 +123,8 @@ class BiGRU(nn.Module):
         super().__init__()
         self.n_hidden = n_hidden
         self.n_layers = n_layers
-        self.gru = MonoGRU(n_input, n_hidden, n_layers)
+        self.gru_f = MonoGRU(n_input, n_hidden, n_layers)
+        self.gru_b = MonoGRU(n_input, n_hidden, n_layers)
 
     def forward(self, *args):
         # f = forward, b = backward
@@ -108,8 +141,8 @@ class BiGRU(nn.Module):
         hidd_f = hidd[:split_pt]
         hidd_b = hidd[split_pt:]
 
-        out_f, new_hidd_f = self.gru(inps_f, hidd_f)
-        out_b, new_hidd_b = self.gru(inps_b, hidd_b)
+        out_f, new_hidd_f = self.gru_f(inps_f, hidd_f)
+        out_b, new_hidd_b = self.gru_b(inps_b, hidd_b)
 
         out = torch.cat((out_f, out_b), -1)
         new_hidd = torch.cat((new_hidd_f, new_hidd_b), 0)
@@ -126,11 +159,11 @@ class MonoGRU(nn.Module):
         self.n_hidden = n_hidden
         self.n_layers = n_layers
         self.state = nn.ModuleList([nn.Linear(n_input + n_hidden, n_hidden)]
-                                   + [nn.Linear(2 * n_hidden, n_hidden) for x in range(n_layers)])
+                                   + [nn.Linear(2 * n_hidden, n_hidden) for _ in range(n_layers-1)])
         self.reset = nn.ModuleList([nn.Linear(n_input + n_hidden, n_hidden)]
-                                   + [nn.Linear(2 * n_hidden, n_hidden) for x in range(n_layers)])
+                                   + [nn.Linear(2 * n_hidden, n_hidden) for _ in range(n_layers-1)])
         self.update = nn.ModuleList([nn.Linear(n_input + n_hidden, n_hidden)]
-                                    + [nn.Linear(2 * n_hidden, n_hidden) for x in range(n_layers)])
+                                    + [nn.Linear(2 * n_hidden, n_hidden) for _ in range(n_layers-1)])
 
     def forward(self, *args):
         inps = args[0]

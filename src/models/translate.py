@@ -2,8 +2,6 @@ import torch
 
 from src.utils import pad_len_sort
 
-# TODO: Format string to torch.Tensor
-# TODO: Give functions proper names
 
 def Multi30k(enc,dec,trg_sos_id,trg_eos_id,sent):
     sos_token_tensor = torch.LongTensor([[trg_sos_id]]).cuda()
