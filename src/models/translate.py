@@ -10,7 +10,7 @@ def Multi30k(enc,dec,trg_sos_id,trg_eos_id,sent):
     hidd = enc(sent)
     out = []
     prev_word = sos_token_tensor
-    while prev_word != trg_eos_id and len(out) < 50:
+    while prev_word != trg_eos_id and len(out) < 30:
         out_word,hidd = dec(prev_word,hidd)
         prev_word = torch.argmax(out_word,dim=-1)
         out.append(prev_word.item())
@@ -24,7 +24,7 @@ def Multi30k_VLS(enc,dec,trg_sos_id,trg_eos_id,src_pad_id,sent):
     hidd = enc(src,ls)
     out = []
     prev_word = sos_token_tensor
-    while prev_word != trg_eos_id and len(out) < 50:
+    while prev_word != trg_eos_id and len(out) < 30:
         out_word,hidd = dec(prev_word,hidd)
         prev_word = torch.argmax(out_word,dim=-1)
         out.append(prev_word.item())
@@ -51,7 +51,7 @@ def rnnsearch(enc,dec,trg_sos_id,trg_eos_id,sent):
     out = []
     prev_word = sos_token_tensor
     state = None
-    while prev_word != trg_eos_id and len(out) < 50:
+    while prev_word != trg_eos_id and len(out) < 30:
         out_word,hidd = dec(old_out,state,prev_word)
         prev_word = torch.argmax(out_word,dim=-1).detach()
         out.append(prev_word.item())
