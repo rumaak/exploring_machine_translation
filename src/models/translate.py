@@ -52,7 +52,7 @@ def rnnsearch(enc,dec,trg_sos_id,trg_eos_id,sent):
     prev_word = sos_token_tensor
     state = None
     while prev_word != trg_eos_id and len(out) < 30:
-        out_word,hidd = dec(old_out,state,prev_word)
+        out_word,state = dec(old_out,state,prev_word)
         prev_word = torch.argmax(out_word,dim=-1).detach()
         out.append(prev_word.item())
     return out
