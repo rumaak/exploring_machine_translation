@@ -17,3 +17,6 @@ proceeding, see **Prerequisities** below.
 I highly recommend setting up a conda environment before installing packages.
 * navigate to root
 * pip install -r requirements.txt
+
+Also, while in environment, do this:
+`python -m spacy download en`
