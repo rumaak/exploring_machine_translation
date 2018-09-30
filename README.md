@@ -3,6 +3,8 @@ In this project I have attempted to implement neural machine translation algorit
 data preprocessing, etc. The **Machine translation.ipynb** notebook puts together all the machinery and presents the work done. Before
 proceeding, see **Prerequisities** below.
 
+History of this repo is quite big, so it is wise to clone only the last commit. In future, I am planning to delete this repo and create a fresh new one without this issue.
+
 ### Prerequisities
 ##### Datasets
 * WMT14  
