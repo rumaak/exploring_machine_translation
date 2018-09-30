@@ -7,7 +7,7 @@ class SimpleEncoder(nn.Module):
         super().__init__()
         self.e = nn.Embedding(n_words,n_factors)
         self.lstm = nn.LSTM(n_factors,n_hidden)
-        
+
     def forward(self,inp):
         out = self.e(inp)
         _,hidd = self.lstm(out)
@@ -19,7 +19,7 @@ class SimpleEncoderVLS(nn.Module):
         self.e = nn.Embedding(n_words,n_factors)
         self.lstm = nn.LSTM(n_factors,n_hidden)
         self.pad_id = pad_id
-        
+
     def forward(self,inp,ls):
         out = self.e(inp)
         out = pack_padded_sequence(out,ls)
@@ -32,7 +32,7 @@ class SimpleDecoder(nn.Module):
         self.e = nn.Embedding(n_words,n_factors)
         self.lstm = nn.LSTM(n_factors,n_hidden)
         self.fc = nn.Linear(n_hidden,n_words)
-        
+
     def forward(self,inp,hidd):
         out = self.e(inp)
         out,hidd = self.lstm(out,hidd)
