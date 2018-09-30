@@ -36,10 +36,16 @@ def rnnsearch(enc,dec,trg_sos_id,trg_eos_id,sent):
     dec.eval()
     old_out,_ = enc(sent)
     out = []
+    att = []
     prev_word = sos_token_tensor
     state = None
     while prev_word != trg_eos_id and len(out) < 30:
-        out_word,state = dec(old_out,state,prev_word)
+        out_word,state,a = dec(old_out,state,prev_word,getAttention=True)
         prev_word = torch.argmax(out_word,dim=-1).detach()
+
         out.append(prev_word.item())
-    return out
+        att.append(a.detach().cpu())
+
+    att = torch.cat(att, 1)[:,:,0].numpy()
+
+    return out, att

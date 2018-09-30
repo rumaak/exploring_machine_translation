@@ -39,13 +39,14 @@ class AttnDecoder(nn.Module):
         self.t_hat = nn.Linear(n_hidden_dec + n_factors + (n_hidden_enc*n_dir_enc), 2 * n_l)
         self.out = nn.Linear(n_l, n_words)
 
-    def forward(self, inp, state, prev_word):
+    def forward(self, inp, state, prev_word, getAttention=False):
         """
         Feed forward
         Input:
             inp - (seq_len,bs,n_hidd_enc*n_dir_enc)
             state - (n_layers,bs,n_hidden_dec)
             prev_word - (1,bs)
+            getAttention - bool
         Output:
             out - (1,bs,n_words)
             hidd - (n_layers,bs,n_hidden)
@@ -56,7 +57,8 @@ class AttnDecoder(nn.Module):
         if state is None:
             state = torch.zeros(self.n_layers, bs, self.n_hidden).cuda()
 
-        c = self.context(state[0], inp)[None, :]
+        c, a = self.context(state[0], inp)
+        c = c[None, :]
 
         out, hidd = self.gru(torch.cat((prev_word, c), -1), state)
 
@@ -65,6 +67,9 @@ class AttnDecoder(nn.Module):
 
         out = self.out(t)
         out = F.log_softmax(out, -1)
+
+        if getAttention:
+            return out, hidd, a
 
         return out, hidd
 
@@ -79,12 +84,12 @@ class AttnDecoder(nn.Module):
         """
         state_expd = state.expand(len(inp), *state.size())
 
-        c = self.align[0](torch.cat((inp, state_expd), -1))
-        c = self.align[1](torch.tanh(c))
-        c = F.softmax(c, 0)
-        c = (c * inp).sum(0)
+        a = self.align[0](torch.cat((inp, state_expd), -1))
+        a = self.align[1](torch.tanh(a))
+        a = F.softmax(a, 0)
+        c = (a * inp).sum(0)
 
-        return c
+        return c, a
 
     def compute_t(self, t_hat):
         t1 = t_hat[...,self.t_ids[0]]
