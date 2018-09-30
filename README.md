@@ -20,3 +20,13 @@ I highly recommend setting up a conda environment before installing packages.
 
 Also, while in environment, do this:
 `python -m spacy download en`
+
+##### Trained models
+* LSTM RNN
+   * download https://1drv.ms/f/s!AiQ5a2cXVytTmUHOdj_FIim0ge2P
+   * move to models/LSTM_RNN
+
+* RNNsearch
+   * download https://1drv.ms/f/s!AiQ5a2cXVytTmUTIIBY09Kq4NSC4
+   * move to models/RNNsearch
+
