@@ -32,3 +32,6 @@ Also, while in environment, do this:
    * download https://1drv.ms/f/s!AiQ5a2cXVytTmUTIIBY09Kq4NSC4
    * move to models/RNNsearch
 
+##### References
+* LSTM RNN model - arXiv:1409.3215v3 [cs.CL]
+* RNNsearch model - arXiv:1409.0473v7 [cs.CL]
